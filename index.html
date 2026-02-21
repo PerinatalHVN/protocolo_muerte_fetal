@@ -42,13 +42,21 @@ main{padding:14px;max-width:900px;margin:0 auto;padding-bottom:30px}
 label{font-weight:800;font-size:14px;display:block}
 .muted{color:var(--muted);font-size:13px;margin-top:6px}
 
-input[type=number]{
+/* ✅ Campo semanas: mismo tamaño que botones */
+#weeks{
   width:100%;
   padding:12px;
   border-radius:12px;
   border:1px solid var(--border);
-  font-size:16px;
+  font-size:16px;     /* igual que botones */
+  font-weight:800;    /* mismo impacto visual */
   margin-top:6px;
+  line-height:1.2;
+}
+#weeks:focus{
+  outline:none;
+  border-color:rgba(80,128,112,.6);
+  box-shadow:0 0 0 4px rgba(80,128,112,.12);
 }
 
 .seg{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
@@ -73,16 +81,20 @@ input[type=number]{
 
 .btn{
   width:100%;
-  padding:14px;
-  border-radius:14px;
+  padding:20px;
+  border-radius:18px;
   border:0;
-  background:var(--brand-green);
+  background:#005bbb; /* botón principal diferente */
   color:#fff;
-  font-size:16px;
+  font-size:19px;
   font-weight:900;
-  margin-top:12px;
+  letter-spacing:.2px;
+  margin-top:18px;
+  box-shadow:0 10px 22px rgba(0,0,0,.30);
+  transition:all .15s ease;
 }
-.btn:disabled{opacity:.5}
+.btn:active{transform:scale(0.97);box-shadow:0 6px 14px rgba(0,0,0,.25)}
+.btn:disabled{background:#9aa3ad;box-shadow:none;opacity:1}
 
 h2{margin:0 0 8px;font-size:16px}
 ul{margin:0;padding-left:18px}
@@ -124,8 +136,14 @@ li{margin:8px 0}
   <div class="card">
     <label for="weeks">Edad gestacional (semanas)</label>
 
-    <!-- ✅ SOLO ENTEROS: step=1, inputmode numeric -->
-    <input id="weeks" type="number" min="0" step="1" inputmode="numeric" placeholder="Ej.: 20">
+    <!-- ✅ Mantengo number para estabilidad en móvil + solo enteros -->
+    <input id="weeks"
+      type="number"
+      inputmode="numeric"
+      min="0"
+      step="1"
+      placeholder="Ej.: 20"
+    >
 
     <div id="nv_block" style="margin-top:14px;display:none">
       <label>¿Nació vivo?</label>
@@ -160,14 +178,14 @@ li{margin:8px 0}
       </div>
     </div>
 
-    <button id="go" class="btn" type="button">Mostrar qué hay que hacer</button>
+    <button id="go" class="btn" type="button">📋 Mostrar qué hay que hacer</button>
   </div>
 
   <div id="out"></div>
 </main>
 
 <script>
-/* (SCENARIOS: igual que tu versión actual, 22 escenarios) */
+/* ====== SCENARIOS (22) — igual que tu versión actual ====== */
 var SCENARIOS = [
   { id:"S01", group:"LT14", naceVivo:null, retirada:false, necropsia:true,
     observaciones:"La norma general es que los padres no retiren los restos dada la edad gestacional",
@@ -514,7 +532,6 @@ function updateUI(){
     $("go").disabled = true;
     return;
   }
-
   $("go").disabled = (candidates.length !== 1);
 }
 
@@ -569,13 +586,13 @@ function renderOutput(){
   catch(e) { $("out").scrollIntoView(); }
 }
 
+/* ✅ Enteros: si meten 22.5 o pegan 22.5, se redondea y se reescribe */
 $("weeks").addEventListener("input", function(){
-  // ✅ Forzar ENTERO (por si pegan 22.5)
   var raw = String(this.value || "").replace(",", ".");
   var v = parseFloat(raw);
   if(isFinite(v)) v = Math.round(v);
 
-  // reflejar en el input el entero
+  // reescribir el input para que quede entero
   if(isFinite(v)) this.value = String(v);
 
   state.weeks = (isFinite(v) ? v : null);
@@ -587,7 +604,6 @@ $("weeks").addEventListener("input", function(){
 
   resetActives();
   $("out").innerHTML = "";
-
   updateUI();
 });
 
@@ -595,7 +611,7 @@ $("nv_no").addEventListener("click", function(){
   if(this.disabled) return;
   state.naceVivo = false;
   setActive("nv_no", ["nv_no","nv_si"]);
-  state.retirada = null; state.necropsia = null;
+  state.retirada=null; state.necropsia=null;
   $("ret_si").classList.remove("active"); $("ret_no").classList.remove("active");
   $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
   $("out").innerHTML = "";
@@ -605,7 +621,7 @@ $("nv_si").addEventListener("click", function(){
   if(this.disabled) return;
   state.naceVivo = true;
   setActive("nv_si", ["nv_no","nv_si"]);
-  state.retirada = null; state.necropsia = null;
+  state.retirada=null; state.necropsia=null;
   $("ret_si").classList.remove("active"); $("ret_no").classList.remove("active");
   $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
   $("out").innerHTML = "";
