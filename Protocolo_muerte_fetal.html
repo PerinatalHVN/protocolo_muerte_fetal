@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Asistente de actuación – Muerte fetal</title>
+
+<style>
+:root{
+  --brand-green:#508070;
+  --bg:#f6f7f9;
+  --card:#ffffff;
+  --text:#111;
+  --muted:#555;
+  --border:#d0d7de;
+  --warning-bg:#fff4cc;
+  --warning-border:#e0b800;
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text)}
+
+header{
+  position:sticky;top:0;z-index:10;
+  background:var(--brand-green);color:#fff;
+  padding:14px;
+}
+header .hospital{font-weight:800}
+header .service{font-size:13px;opacity:.95}
+header .appname{font-size:14px;font-weight:800;margin-top:6px}
+
+main{padding:14px;max-width:900px;margin:0 auto;padding-bottom:30px}
+
+.card{
+  background:var(--card);
+  border-radius:16px;
+  padding:14px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+  margin-bottom:12px;
+}
+
+label{font-weight:800;font-size:14px;display:block}
+.muted{color:var(--muted);font-size:13px;margin-top:6px}
+
+input[type=number]{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  font-size:16px;
+  margin-top:6px;
+}
+
+.seg{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.seg button{
+  flex:1; min-width:130px;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#fff;
+  font-size:16px;
+  font-weight:800;
+  transition:all .15s ease;
+}
+.seg button.active{
+  background:var(--brand-green);
+  color:#fff;
+  border-color:var(--brand-green);
+  box-shadow:0 4px 10px rgba(0,0,0,.15);
+}
+.seg button:active{transform:scale(0.97)}
+.seg button:disabled{opacity:.45}
+
+.btn{
+  width:100%;
+  padding:14px;
+  border-radius:14px;
+  border:0;
+  background:var(--brand-green);
+  color:#fff;
+  font-size:16px;
+  font-weight:900;
+  margin-top:12px;
+}
+.btn:disabled{opacity:.5}
+
+h2{margin:0 0 8px;font-size:16px}
+ul{margin:0;padding-left:18px}
+li{margin:8px 0}
+
+.grid2{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:820px){.grid2{grid-template-columns:1fr 1fr}}
+
+.control-info{font-size:12px;color:#777}
+
+.obs-card{
+  background:#eaf6f1;
+  border-left:5px solid var(--brand-green);
+}
+.obs-title{display:flex;align-items:center;gap:8px}
+.obs-icon{font-size:18px}
+
+.warning{
+  background:var(--warning-bg);
+  border-left:5px solid var(--warning-border);
+  padding:10px;
+  border-radius:10px;
+  margin-top:8px;
+  font-size:14px;
+  line-height:1.25;
+}
+.warning .wicon{margin-right:6px}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="hospital">Hospital Universitario Virgen de las Nieves</div>
+  <div class="service">Servicio de Obstetricia y Ginecología</div>
+  <div class="appname">Asistente de actuación – Muerte fetal</div>
+</header>
+
+<main>
+  <div class="card">
+    <label for="weeks">Edad gestacional (semanas)</label>
+
+    <!-- ✅ SOLO ENTEROS: step=1, inputmode numeric -->
+    <input id="weeks" type="number" min="0" step="1" inputmode="numeric" placeholder="Ej.: 20">
+
+    <div id="nv_block" style="margin-top:14px;display:none">
+      <label>¿Nació vivo?</label>
+      <div class="seg" role="group" aria-label="Nace vivo">
+        <button id="nv_no" type="button">No</button>
+        <button id="nv_si" type="button">Sí</button>
+      </div>
+    </div>
+
+    <div id="ret_block" style="margin-top:14px;display:none">
+      <label>¿Desean retirar los restos?</label>
+      <div class="seg" role="group" aria-label="Retiran restos">
+        <button id="ret_no" type="button">No</button>
+        <button id="ret_si" type="button">Sí</button>
+      </div>
+      <div id="ret_note" class="muted" style="display:none"></div>
+    </div>
+
+    <div id="ap_block" style="margin-top:14px;display:none">
+      <label>¿Desean necropsia (estudio de Anatomía Patológica)?</label>
+
+      <div id="ap_note" class="warning" style="display:none">
+        <span class="wicon">⚠️</span>
+        En esta edad gestacional, si nace vivo y los padres no desean retirar los restos,
+        la única opción es solicitar el estudio de Anatomía Patológica para que la incineración
+        corra a cargo del Hospital.
+      </div>
+
+      <div class="seg" role="group" aria-label="Desean necropsia">
+        <button id="ap_no" type="button">No</button>
+        <button id="ap_si" type="button">Sí</button>
+      </div>
+    </div>
+
+    <button id="go" class="btn" type="button">Mostrar qué hay que hacer</button>
+  </div>
+
+  <div id="out"></div>
+</main>
+
+<script>
+/* (SCENARIOS: igual que tu versión actual, 22 escenarios) */
+var SCENARIOS = [
+  { id:"S01", group:"LT14", naceVivo:null, retirada:false, necropsia:true,
+    observaciones:"La norma general es que los padres no retiren los restos dada la edad gestacional",
+    documentos:["Petición Anatomía Patológica (única)"],
+    envio:["Feto y placenta juntos en formol"],
+    eliminacion:["Por parte de Anatomía Patológica"]
+  },
+  { id:"S02", group:"LT14", naceVivo:null, retirada:false, necropsia:false,
+    observaciones:"La norma general es que los padres no retiren los restos dada la edad gestacional",
+    documentos:["Petición Anatomía Patológica (única) especificando que no desean necropsia"],
+    envio:["Feto y placenta juntos en formol"],
+    eliminacion:["Por parte de Anatomía Patológica"]
+  },
+  { id:"S03", group:"LT14", naceVivo:null, retirada:true, necropsia:null,
+    observaciones:"Situación excepcional. Si retiran los restos no es posible el estudio anatomopatológico",
+    documentos:[
+      "Autorización/rechazo de necropsia y/o tratamiento de restos fetales",
+      "Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)"
+    ],
+    envio:["Bote vacío en fresco"],
+    eliminacion:["Funeraria a cargo de los padres"]
+  },
+
+  { id:"S04", group:"14_21", naceVivo:false, retirada:false, necropsia:true, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble)","Autorización/rechazo de necropsia y/o tratamiento de restos fetales"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Por parte de Anatomía Patológica"]
+  },
+  { id:"S05", group:"14_21", naceVivo:true, retirada:false, necropsia:true, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rellenando apartado de certificado de muerte cierta)","Certificado de nacimiento","Certificado de defunción"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Por parte de Anatomía Patológica"]
+  },
+  { id:"S06", group:"14_21", naceVivo:true, retirada:true, necropsia:true, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rellenando apartado de certificado de muerte cierta)","Certificado de nacimiento","Certificado de defunción","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria: Retirar los restos en Anatomía Patológica antes de 30 días"]
+  },
+  { id:"S07", group:"14_21", naceVivo:true, retirada:true, necropsia:false, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rellenando apartado de certificado de muerte cierta)","Certificado de nacimiento","Certificado de defunción","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria: Retirar los restos de la cámara mortuoria"]
+  },
+  { id:"S08", group:"14_21", naceVivo:false, retirada:true, necropsia:false, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria: Retirar los restos de la cámara mortuoria"]
+  },
+  { id:"S09", group:"14_21", naceVivo:false, retirada:true, necropsia:true, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria: Retirar los restos en Anatomía Patológica antes de 30 días"]
+  },
+  { id:"S10", group:"14_21", naceVivo:false, retirada:false, necropsia:false, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Por parte de Anatomía Patológica"]
+  },
+
+  { id:"S11", group:"22_25", naceVivo:false, retirada:false, necropsia:true, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (autorizando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Por parte de Anatomía Patológica"]
+  },
+  { id:"S12", group:"22_25", naceVivo:false, retirada:false, necropsia:false, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Por parte de Anatomía Patológica"]
+  },
+  { id:"S13", group:"22_25", naceVivo:true, retirada:true, necropsia:true,
+    observaciones:"Si nace vivo, la retirada de los restos por parte de los padres es obligatoria",
+    documentos:["Petición Anatomía Patológica (doble)","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria: Retirar los restos en Anatomía Patológica antes de 30 días"]
+  },
+  { id:"S14", group:"22_25", naceVivo:true, retirada:true, necropsia:false,
+    observaciones:"Si nace vivo, la retirada de los restos por parte de los padres es obligatoria",
+    documentos:["Petición Anatomía Patológica (doble)","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria: Retirar los restos de la cámara mortuoria"]
+  },
+  { id:"S15", group:"22_25", naceVivo:false, retirada:true, necropsia:true, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble)","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria: Retirar los restos en Anatomía Patológica antes de 30 días"]
+  },
+  { id:"S16", group:"22_25", naceVivo:false, retirada:true, necropsia:false, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria: Retirar los restos de la cámara mortuoria"]
+  },
+
+  { id:"S17", group:"GE26", naceVivo:false, retirada:true, necropsia:false, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria a cargo de los padres"]
+  },
+  { id:"S18", group:"GE26", naceVivo:false, retirada:false, necropsia:true, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Incineración a cargo del Hospital"]
+  },
+  { id:"S19", group:"GE26", naceVivo:true, retirada:true, necropsia:false,
+    observaciones:"Si nace vivo y no desean necropsia, la retirada de los restos por parte de los padres es obligatoria",
+    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria a cargo de los padres"]
+  },
+  { id:"S20", group:"GE26", naceVivo:true, retirada:true, necropsia:true, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria a cargo de los padres"]
+  },
+  { id:"S21", group:"GE26", naceVivo:true, retirada:false, necropsia:true, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Incineración a cargo del Hospital"]
+  },
+  { id:"S22", group:"GE26", naceVivo:false, retirada:false, necropsia:false, observaciones:"",
+    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
+    eliminacion:["Funeraria a cargo de los padres"]
+  }
+];
+
+function $(id){ return document.getElementById(id); }
+
+function escapeHtml(s){
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function normalizeItem(s){
+  return String(s || "").replace(/\s+/g," ").replace(/^\s+|\s+$/g,"");
+}
+
+function dedupe(items){
+  if(!items || !items.length) return [];
+  var seen = {}, out = [];
+  for(var i=0;i<items.length;i++){
+    var t = normalizeItem(items[i]);
+    if(!t) continue;
+    if(seen[t]) continue;
+    seen[t] = true;
+    out.push(t);
+  }
+  return out;
+}
+
+function renderList(title, items){
+  var clean = dedupe(items);
+  var html = '<div class="card"><h2>' + escapeHtml(title) + '</h2>';
+  if(!clean.length){
+    html += '<div class="muted">—</div></div>';
+    return html;
+  }
+  html += '<ul>';
+  for(var i=0;i<clean.length;i++){
+    html += '<li>' + escapeHtml(clean[i]) + '</li>';
+  }
+  html += '</ul></div>';
+  return html;
+}
+
+function computeGroup(weeks){
+  if(typeof weeks !== "number" || !isFinite(weeks) || weeks < 0) return null;
+  if(weeks < 14) return "LT14";
+  if(weeks <= 21) return "14_21";
+  if(weeks <= 25) return "22_25";
+  return "GE26";
+}
+
+function groupLabel(g){
+  if(g==="LT14") return "< 14 semanas";
+  if(g==="14_21") return "14–21 semanas";
+  if(g==="22_25") return "22–25 semanas";
+  if(g==="GE26") return "≥ 26 semanas";
+  return "";
+}
+
+var state = { weeks:null, group:null, naceVivo:null, retirada:null, necropsia:null };
+
+function filterScenarios(partial){
+  var arr = [];
+  for(var i=0;i<SCENARIOS.length;i++){
+    var sc = SCENARIOS[i];
+    if(partial.group && sc.group !== partial.group) continue;
+
+    if(partial.naceVivo !== null && partial.naceVivo !== undefined){
+      if(sc.naceVivo !== null && sc.naceVivo !== partial.naceVivo) continue;
+    }
+    if(partial.retirada !== null && partial.retirada !== undefined){
+      if(sc.retirada !== null && sc.retirada !== partial.retirada) continue;
+    }
+    if(partial.necropsia !== null && partial.necropsia !== undefined){
+      if(sc.necropsia !== null && sc.necropsia !== partial.necropsia) continue;
+    }
+    arr.push(sc);
+  }
+  return arr;
+}
+
+function allNull(arr, field){
+  if(!arr.length) return true;
+  for(var i=0;i<arr.length;i++){
+    if(arr[i][field] !== null) return false;
+  }
+  return true;
+}
+
+function anyValue(arr, field, value){
+  for(var i=0;i<arr.length;i++){
+    if(arr[i][field] === value) return true;
+  }
+  return false;
+}
+
+function setActive(btnId, groupIds){
+  for(var i=0;i<groupIds.length;i++) $(groupIds[i]).classList.remove("active");
+  $(btnId).classList.add("active");
+}
+
+function setEnabled(btnId, enabled){
+  $(btnId).disabled = !enabled;
+  if(!enabled) $(btnId).classList.remove("active");
+}
+
+function resetActives(){
+  $("nv_si").classList.remove("active");
+  $("nv_no").classList.remove("active");
+  $("ret_si").classList.remove("active");
+  $("ret_no").classList.remove("active");
+  $("ap_si").classList.remove("active");
+  $("ap_no").classList.remove("active");
+}
+
+function updateRetSiLabel(){
+  $("ret_si").textContent = (state.group === "LT14") ? "Sí (excepcional)" : "Sí";
+}
+
+function updateUI(){
+  $("ap_note").style.display = "none";
+  $("ap_no").style.display = "";
+
+  $("ret_note").style.display = "none";
+  $("ret_note").textContent = "";
+
+  if(!state.group){
+    $("nv_block").style.display = "none";
+    $("ret_block").style.display = "none";
+    $("ap_block").style.display = "none";
+    $("go").disabled = true;
+    return;
+  }
+
+  updateRetSiLabel();
+
+  var nvAll = filterScenarios({ group: state.group });
+  var nvApplies = !allNull(nvAll, "naceVivo");
+  $("nv_block").style.display = nvApplies ? "" : "none";
+
+  if(!nvApplies){
+    state.naceVivo = null;
+    $("nv_si").classList.remove("active");
+    $("nv_no").classList.remove("active");
+  }
+
+  var canShowRet = (!nvApplies) || (nvApplies && state.naceVivo !== null);
+  $("ret_block").style.display = canShowRet ? "" : "none";
+
+  if(!canShowRet){
+    $("ap_block").style.display = "none";
+    $("go").disabled = true;
+    return;
+  }
+
+  var mustRetYes = (state.group === "22_25" && state.naceVivo === true);
+
+  var retBasis = filterScenarios({ group: state.group, naceVivo: state.naceVivo });
+  var retYesOk = anyValue(retBasis, "retirada", true);
+  var retNoOk  = anyValue(retBasis, "retirada", false);
+
+  if(mustRetYes){
+    retYesOk = true;
+    retNoOk = false;
+    state.retirada = true;
+    setActive("ret_si", ["ret_no","ret_si"]);
+    $("ret_note").style.display = "";
+    $("ret_note").textContent = "En 22–25 semanas, si nace vivo, la retirada de los restos es obligatoria.";
+  }
+
+  setEnabled("ret_si", retYesOk);
+  setEnabled("ret_no", retNoOk);
+
+  if(!retYesOk && state.retirada === true) state.retirada = null;
+  if(!retNoOk && state.retirada === false) state.retirada = null;
+
+  if(state.retirada === null){
+    $("ap_block").style.display = "none";
+    $("go").disabled = true;
+    return;
+  }
+
+  var apBasis = filterScenarios({ group: state.group, naceVivo: state.naceVivo, retirada: state.retirada });
+  var apApplies = !allNull(apBasis, "necropsia");
+  $("ap_block").style.display = apApplies ? "" : "none";
+
+  if(!apApplies){
+    state.necropsia = null;
+    $("ap_si").classList.remove("active");
+    $("ap_no").classList.remove("active");
+    setEnabled("ap_si", false);
+    setEnabled("ap_no", false);
+  } else {
+    var apYesOk = anyValue(apBasis, "necropsia", true);
+    var apNoOk  = anyValue(apBasis, "necropsia", false);
+    setEnabled("ap_si", apYesOk);
+    setEnabled("ap_no", apNoOk);
+
+    if(!apYesOk && state.necropsia === true) state.necropsia = null;
+    if(!apNoOk && state.necropsia === false) state.necropsia = null;
+  }
+
+  if(apApplies && state.group !== "LT14" && state.naceVivo === true && state.retirada === false){
+    $("ap_note").style.display = "";
+    $("ap_no").style.display = "none";
+    state.necropsia = true;
+    setActive("ap_si", ["ap_no","ap_si"]);
+    setEnabled("ap_si", true);
+  }
+
+  var candidates = filterScenarios({
+    group: state.group,
+    naceVivo: state.naceVivo,
+    retirada: state.retirada,
+    necropsia: state.necropsia
+  });
+
+  if(apApplies && state.necropsia === null){
+    $("go").disabled = true;
+    return;
+  }
+
+  $("go").disabled = (candidates.length !== 1);
+}
+
+function renderOutput(){
+  var candidates = filterScenarios({
+    group: state.group,
+    naceVivo: state.naceVivo,
+    retirada: state.retirada,
+    necropsia: state.necropsia
+  });
+
+  if(candidates.length !== 1){
+    $("out").innerHTML =
+      '<div class="card"><h2>Error</h2><div class="muted">La combinación no coincide de forma única con la tabla.</div></div>';
+    return;
+  }
+
+  var sc = candidates[0];
+
+  var parts = [];
+  parts.push("EG " + state.weeks + " sem");
+  parts.push("Intervalo: " + groupLabel(state.group));
+  if($("nv_block").style.display !== "none") parts.push("Nació vivo: " + (state.naceVivo ? "Sí" : "No"));
+  parts.push("Retiran restos: " + (state.retirada ? "Sí" : "No"));
+  if($("ap_block").style.display !== "none") parts.push("Necropsia: " + (state.necropsia ? "Sí" : "No"));
+
+  var head =
+    '<div class="card control-info">' +
+      '<div>' + escapeHtml(parts.join(" · ")) + '</div>' +
+      '<div>Escenario: ' + escapeHtml(sc.id) + '</div>' +
+    '</div>';
+
+  var obsHtml = "";
+  if(normalizeItem(sc.observaciones)){
+    obsHtml =
+      '<div class="card obs-card">' +
+        '<div class="obs-title"><span class="obs-icon">ℹ️</span><h2>Observaciones</h2></div>' +
+        '<div style="white-space:pre-wrap">' + escapeHtml(sc.observaciones) + '</div>' +
+      '</div>';
+  }
+
+  $("out").innerHTML =
+    head +
+    obsHtml +
+    '<div class="grid2">' +
+      renderList("Documentos", sc.documentos) +
+      renderList("Envío de muestras", sc.envio) +
+    '</div>' +
+    renderList("Eliminación", sc.eliminacion);
+
+  try { $("out").scrollIntoView({ behavior: "smooth" }); }
+  catch(e) { $("out").scrollIntoView(); }
+}
+
+$("weeks").addEventListener("input", function(){
+  // ✅ Forzar ENTERO (por si pegan 22.5)
+  var raw = String(this.value || "").replace(",", ".");
+  var v = parseFloat(raw);
+  if(isFinite(v)) v = Math.round(v);
+
+  // reflejar en el input el entero
+  if(isFinite(v)) this.value = String(v);
+
+  state.weeks = (isFinite(v) ? v : null);
+  state.group = computeGroup(state.weeks);
+
+  state.naceVivo = null;
+  state.retirada = null;
+  state.necropsia = null;
+
+  resetActives();
+  $("out").innerHTML = "";
+
+  updateUI();
+});
+
+$("nv_no").addEventListener("click", function(){
+  if(this.disabled) return;
+  state.naceVivo = false;
+  setActive("nv_no", ["nv_no","nv_si"]);
+  state.retirada = null; state.necropsia = null;
+  $("ret_si").classList.remove("active"); $("ret_no").classList.remove("active");
+  $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
+  $("out").innerHTML = "";
+  updateUI();
+});
+$("nv_si").addEventListener("click", function(){
+  if(this.disabled) return;
+  state.naceVivo = true;
+  setActive("nv_si", ["nv_no","nv_si"]);
+  state.retirada = null; state.necropsia = null;
+  $("ret_si").classList.remove("active"); $("ret_no").classList.remove("active");
+  $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
+  $("out").innerHTML = "";
+  updateUI();
+});
+
+$("ret_no").addEventListener("click", function(){
+  if(this.disabled) return;
+  state.retirada = false;
+  setActive("ret_no", ["ret_no","ret_si"]);
+  state.necropsia = null;
+  $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
+  $("out").innerHTML = "";
+  updateUI();
+});
+$("ret_si").addEventListener("click", function(){
+  if(this.disabled) return;
+  state.retirada = true;
+  setActive("ret_si", ["ret_no","ret_si"]);
+  state.necropsia = null;
+  $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
+  $("out").innerHTML = "";
+  updateUI();
+});
+
+$("ap_no").addEventListener("click", function(){
+  if(this.disabled) return;
+  state.necropsia = false;
+  setActive("ap_no", ["ap_no","ap_si"]);
+  $("out").innerHTML = "";
+  updateUI();
+});
+$("ap_si").addEventListener("click", function(){
+  if(this.disabled) return;
+  state.necropsia = true;
+  setActive("ap_si", ["ap_no","ap_si"]);
+  $("out").innerHTML = "";
+  updateUI();
+});
+
+$("go").addEventListener("click", function(){ renderOutput(); });
+
+updateUI();
+</script>
+</body>
+</html>
