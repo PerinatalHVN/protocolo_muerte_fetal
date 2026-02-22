@@ -43,7 +43,6 @@ main{padding:14px;max-width:900px;margin:0 auto;padding-bottom:30px}
 label{font-weight:800;font-size:14px;display:block}
 .muted{color:var(--muted);font-size:13px;margin-top:6px}
 
-/* Campo semanas: mismo tamaño que botones */
 #weeks{
   width:100%;
   padding:12px;
@@ -123,6 +122,16 @@ li{margin:8px 0}
   line-height:1.25;
 }
 .warning .wicon{margin-right:6px}
+
+#weeks_hint{
+  margin-top:8px;
+  font-size:13px;
+  color:var(--muted);
+}
+#weeks_hint.bad{
+  color:#a40000;
+  font-weight:800;
+}
 </style>
 </head>
 
@@ -137,16 +146,21 @@ li{margin:8px 0}
 </header>
 
 <main>
-  <div class="card">
+  <div id="topcard" class="card">
     <label for="weeks">Edad gestacional (semanas)</label>
 
     <input id="weeks"
-      type="number"
+      type="text"
       inputmode="numeric"
-      min="1"
-      step="1"
+      autocomplete="off"
+      autocapitalize="off"
+      spellcheck="false"
+      maxlength="2"
       placeholder="Ej.: 20"
+      aria-describedby="weeks_hint"
     >
+
+    <div id="weeks_hint">Valores permitidos de 10 a 42.</div>
 
     <div id="nv_block" style="margin-top:14px;display:none">
       <label>¿Nació vivo?</label>
@@ -314,7 +328,7 @@ var SCENARIOS = [
   }
 ];
 
-/* Utilidades */
+/* Helpers */
 function $(id){ return document.getElementById(id); }
 function escapeHtml(s){
   return String(s)
@@ -340,7 +354,7 @@ function renderList(title, items){
   html+='</ul></div>'; return html;
 }
 function computeGroup(weeks){
-  if(typeof weeks!=="number"||!isFinite(weeks)||weeks<1) return null;
+  if(typeof weeks!=="number"||!isFinite(weeks)) return null;
   if(weeks<14) return "LT14";
   if(weeks<=21) return "14_21";
   if(weeks<=25) return "22_25";
@@ -353,34 +367,22 @@ function groupLabel(g){
   if(g==="GE26") return "≥ 26 semanas";
   return "";
 }
-
-/* ====== Scroll helpers ====== */
-function smoothScrollTo(el){
+function setWeeksHint(text, bad){
+  var el=$("weeks_hint");
+  el.textContent=text;
+  if(bad) el.classList.add("bad");
+  else el.classList.remove("bad");
+}
+function scrollToTopCard(){
+  var el=$("topcard");
   if(!el) return;
   setTimeout(function(){
-    try { el.scrollIntoView({behavior:"smooth", block:"start"}); }
+    try{ el.scrollIntoView({behavior:"smooth", block:"start"}); }
     catch(e){ el.scrollIntoView(); }
-  }, 80);
-}
-function scrollToNextFromWeeks(){
-  if($("nv_block").style.display !== "none") return smoothScrollTo($("nv_block"));
-  if($("ret_block").style.display !== "none") return smoothScrollTo($("ret_block"));
-  if($("ap_block").style.display !== "none") return smoothScrollTo($("ap_block"));
-}
-function scrollToAfterNV(){
-  if($("ret_block").style.display !== "none") return smoothScrollTo($("ret_block"));
-  if($("ap_block").style.display !== "none") return smoothScrollTo($("ap_block"));
-  return smoothScrollTo($("go"));
-}
-function scrollToAfterRet(){
-  if($("ap_block").style.display !== "none") return smoothScrollTo($("ap_block"));
-  return smoothScrollTo($("go"));
-}
-function scrollToAfterAP(){
-  return smoothScrollTo($("go"));
+  }, 60);
 }
 
-/* ====== Estado ====== */
+/* Estado */
 var state={ weeks:null, group:null, naceVivo:null, retirada:null, necropsia:null };
 
 function filterScenarios(partial){
@@ -414,19 +416,38 @@ function setActive(btnId, groupIds){
   for(var i=0;i<groupIds.length;i++) $(groupIds[i]).classList.remove("active");
   $(btnId).classList.add("active");
 }
+function clearActive(groupIds){
+  for(var i=0;i<groupIds.length;i++) $(groupIds[i]).classList.remove("active");
+}
 function setEnabled(btnId, enabled){
   $(btnId).disabled=!enabled;
   if(!enabled) $(btnId).classList.remove("active");
-}
-function resetActives(){
-  $("nv_si").classList.remove("active"); $("nv_no").classList.remove("active");
-  $("ret_si").classList.remove("active"); $("ret_no").classList.remove("active");
-  $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
 }
 function updateRetSiLabel(){
   $("ret_si").textContent = (state.group==="LT14") ? "Sí (excepcional)" : "Sí";
 }
 
+/* ✅ Reset “duro” de lo que depende de cada paso */
+function resetAfterWeeks(){
+  state.naceVivo=null; state.retirada=null; state.necropsia=null;
+  clearActive(["nv_no","nv_si","ret_no","ret_si","ap_no","ap_si"]);
+  $("out").innerHTML="";
+}
+function resetAfterNV(){
+  state.retirada=null; state.necropsia=null;
+  clearActive(["ret_no","ret_si","ap_no","ap_si"]);
+  $("out").innerHTML="";
+}
+function resetAfterRet(){
+  state.necropsia=null;
+  clearActive(["ap_no","ap_si"]);
+  $("out").innerHTML="";
+}
+function resetAfterAP(){
+  $("out").innerHTML="";
+}
+
+/* UI */
 function updateUI(){
   $("ap_note").style.display="none";
   $("ap_no").style.display="";
@@ -449,13 +470,11 @@ function updateUI(){
 
   if(!nvApplies){
     state.naceVivo=null;
-    $("nv_si").classList.remove("active");
-    $("nv_no").classList.remove("active");
+    clearActive(["nv_no","nv_si"]);
   }
 
   var canShowRet = (!nvApplies) || (nvApplies && state.naceVivo!==null);
   $("ret_block").style.display = canShowRet ? "" : "none";
-
   if(!canShowRet){
     $("ap_block").style.display="none";
     $("go").disabled=true;
@@ -494,8 +513,7 @@ function updateUI(){
 
   if(!apApplies){
     state.necropsia=null;
-    $("ap_si").classList.remove("active");
-    $("ap_no").classList.remove("active");
+    clearActive(["ap_no","ap_si"]);
     setEnabled("ap_si",false); setEnabled("ap_no",false);
   } else {
     var apYesOk=anyValue(apBasis,"necropsia",true);
@@ -556,79 +574,87 @@ function renderOutput(){
   try{ $("out").scrollIntoView({behavior:"smooth"}); } catch(e){ $("out").scrollIntoView(); }
 }
 
-/* Semanas: enteros, mínimo 1, cerrar teclado + scroll */
+/* ====== Semanas: 2 dígitos, solo dígitos, rango 10–42 ====== */
 $("weeks").addEventListener("input", function(){
-  var raw=String(this.value||"").replace(",",".");
-  var v=parseFloat(raw);
-  if(isFinite(v)) v=Math.round(v);
+  var digits = String(this.value || "").replace(/\D/g, "");
+  if(digits.length > 2) digits = digits.slice(0,2);
+  if(this.value !== digits) this.value = digits;
 
-  if(!isFinite(v) || v < 1){
-    this.value = "";
-    state.weeks=null;
-    state.group=null;
-
-    state.naceVivo=null; state.retirada=null; state.necropsia=null;
-    resetActives();
-    $("out").innerHTML="";
+  if(digits.length < 2){
+    state.weeks=null; state.group=null;
+    resetAfterWeeks();
     updateUI();
+    setWeeksHint("Valores permitidos de 10 a 42.", false);
     return;
   }
 
-  this.value=String(v);
-  state.weeks=v;
-  state.group=computeGroup(state.weeks);
+  var w = parseInt(digits, 10);
+  if(!(w >= 10 && w <= 42)){
+    state.weeks=null; state.group=null;
+    resetAfterWeeks();
+    updateUI();
+    setWeeksHint("Valor no válido. Debe estar entre 10 y 42.", true);
+    return;
+  }
 
-  state.naceVivo=null; state.retirada=null; state.necropsia=null;
-  resetActives();
-  $("out").innerHTML="";
+  setWeeksHint("Valores permitidos de 10 a 42.", false);
+  state.weeks=w;
+  state.group=computeGroup(w);
+  resetAfterWeeks();
   updateUI();
-
-  this.blur();              // cerrar teclado
-  scrollToNextFromWeeks();  // bajar a la siguiente pregunta
+  scrollToTopCard();
 });
 
-/* Botones + auto-scroll */
+/* ✅ Click handlers: reset primero, marcar después */
 $("nv_no").addEventListener("click", function(){
   if(this.disabled) return;
-  state.naceVivo=false; setActive("nv_no",["nv_no","nv_si"]);
-  state.retirada=null; state.necropsia=null;
-  $("out").innerHTML=""; updateUI();
-  scrollToAfterNV();
+  resetAfterNV();                 // <-- limpia retirar/necropsia
+  state.naceVivo=false;
+  setActive("nv_no",["nv_no","nv_si"]);
+  updateUI();
+  scrollToTopCard();
 });
 $("nv_si").addEventListener("click", function(){
   if(this.disabled) return;
-  state.naceVivo=true; setActive("nv_si",["nv_no","nv_si"]);
-  state.retirada=null; state.necropsia=null;
-  $("out").innerHTML=""; updateUI();
-  scrollToAfterNV();
+  resetAfterNV();
+  state.naceVivo=true;
+  setActive("nv_si",["nv_no","nv_si"]);
+  updateUI();
+  scrollToTopCard();
 });
 
 $("ret_no").addEventListener("click", function(){
   if(this.disabled) return;
-  state.retirada=false; setActive("ret_no",["ret_no","ret_si"]);
-  state.necropsia=null;
-  $("out").innerHTML=""; updateUI();
-  scrollToAfterRet();
+  resetAfterRet();                // <-- limpia necropsia
+  state.retirada=false;
+  setActive("ret_no",["ret_no","ret_si"]);
+  updateUI();
+  scrollToTopCard();
 });
 $("ret_si").addEventListener("click", function(){
   if(this.disabled) return;
-  state.retirada=true; setActive("ret_si",["ret_no","ret_si"]);
-  state.necropsia=null;
-  $("out").innerHTML=""; updateUI();
-  scrollToAfterRet();
+  resetAfterRet();
+  state.retirada=true;
+  setActive("ret_si",["ret_no","ret_si"]);
+  updateUI();
+  scrollToTopCard();
 });
 
 $("ap_no").addEventListener("click", function(){
   if(this.disabled) return;
-  state.necropsia=false; setActive("ap_no",["ap_no","ap_si"]);
-  $("out").innerHTML=""; updateUI();
-  scrollToAfterAP();
+  resetAfterAP();
+  state.necropsia=false;
+  setActive("ap_no",["ap_no","ap_si"]);
+  updateUI();
+  scrollToTopCard();
 });
 $("ap_si").addEventListener("click", function(){
   if(this.disabled) return;
-  state.necropsia=true; setActive("ap_si",["ap_no","ap_si"]);
-  $("out").innerHTML=""; updateUI();
-  scrollToAfterAP();
+  resetAfterAP();
+  state.necropsia=true;
+  setActive("ap_si",["ap_no","ap_si"]);
+  updateUI();
+  scrollToTopCard();
 });
 
 $("go").addEventListener("click", function(){ renderOutput(); });
