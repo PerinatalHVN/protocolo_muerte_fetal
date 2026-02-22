@@ -202,7 +202,7 @@ li{margin:8px 0}
 </main>
 
 <script>
-/* ====== SCENARIOS (22) ====== */
+/* ====== SCENARIOS (ahora 23) ====== */
 var SCENARIOS = [
   { id:"S01", group:"LT14", naceVivo:null, retirada:false, necropsia:true,
     observaciones:"La norma general es que los padres no retiren los restos dada la edad gestacional",
@@ -300,6 +300,23 @@ var SCENARIOS = [
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
     eliminacion:["Funeraria a cargo de los padres"]
   },
+
+  /* ✅ NUEVO: ≥26 · No nace vivo · Sí retiran · Sí necropsia */
+  { id:"S23", group:"GE26", naceVivo:false, retirada:true, necropsia:true, observaciones:"",
+    documentos:[
+      "Petición Anatomía Patológica (doble)",
+      "Autorización/rechazo de necropsia y/o tratamiento de restos fetales",
+      "Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)",
+      "Boletín estadístico"
+    ],
+    envio:[
+      "Feto y placenta por separado:",
+      "- Feto: seco y frío si se envía < 72 h, si no en formol.",
+      "- Placenta en formol"
+    ],
+    eliminacion:["Funeraria: Retirar los restos en Anatomía Patológica antes de 30 días"]
+  },
+
   { id:"S18", group:"GE26", naceVivo:false, retirada:false, necropsia:true, observaciones:"",
     documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
@@ -427,7 +444,7 @@ function updateRetSiLabel(){
   $("ret_si").textContent = (state.group==="LT14") ? "Sí (excepcional)" : "Sí";
 }
 
-/* ✅ Reset “duro” de lo que depende de cada paso */
+/* Reset “duro” */
 function resetAfterWeeks(){
   state.naceVivo=null; state.retirada=null; state.necropsia=null;
   clearActive(["nv_no","nv_si","ret_no","ret_si","ap_no","ap_si"]);
@@ -574,7 +591,7 @@ function renderOutput(){
   try{ $("out").scrollIntoView({behavior:"smooth"}); } catch(e){ $("out").scrollIntoView(); }
 }
 
-/* ====== Semanas: 2 dígitos, solo dígitos, rango 10–42 ====== */
+/* Semanas: 2 dígitos, solo dígitos, rango 10–42 */
 $("weeks").addEventListener("input", function(){
   var digits = String(this.value || "").replace(/\D/g, "");
   if(digits.length > 2) digits = digits.slice(0,2);
@@ -605,10 +622,10 @@ $("weeks").addEventListener("input", function(){
   scrollToTopCard();
 });
 
-/* ✅ Click handlers: reset primero, marcar después */
+/* Click handlers: reset primero, marcar después */
 $("nv_no").addEventListener("click", function(){
   if(this.disabled) return;
-  resetAfterNV();                 // <-- limpia retirar/necropsia
+  resetAfterNV();
   state.naceVivo=false;
   setActive("nv_no",["nv_no","nv_si"]);
   updateUI();
@@ -625,7 +642,7 @@ $("nv_si").addEventListener("click", function(){
 
 $("ret_no").addEventListener("click", function(){
   if(this.disabled) return;
-  resetAfterRet();                // <-- limpia necropsia
+  resetAfterRet();
   state.retirada=false;
   setActive("ret_no",["ret_no","ret_si"]);
   updateUI();
