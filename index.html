@@ -24,9 +24,10 @@ header{
   position:sticky;top:0;z-index:10;
   background:var(--brand-green);color:#fff;
   padding:14px;
+  text-align:center;
 }
 header .hospital{font-weight:800}
-header .service{font-size:13px;opacity:.95}
+header .service{font-size:13px;opacity:.95;line-height:1.2}
 header .appname{font-size:14px;font-weight:800;margin-top:6px}
 
 main{padding:14px;max-width:900px;margin:0 auto;padding-bottom:30px}
@@ -42,14 +43,14 @@ main{padding:14px;max-width:900px;margin:0 auto;padding-bottom:30px}
 label{font-weight:800;font-size:14px;display:block}
 .muted{color:var(--muted);font-size:13px;margin-top:6px}
 
-/* ✅ Campo semanas: mismo tamaño que botones */
+/* Campo semanas: mismo tamaño que botones */
 #weeks{
   width:100%;
   padding:12px;
   border-radius:12px;
   border:1px solid var(--border);
-  font-size:16px;     /* igual que botones */
-  font-weight:800;    /* mismo impacto visual */
+  font-size:16px;
+  font-weight:800;
   margin-top:6px;
   line-height:1.2;
 }
@@ -84,7 +85,7 @@ label{font-weight:800;font-size:14px;display:block}
   padding:20px;
   border-radius:18px;
   border:0;
-  background:#005bbb; /* botón principal diferente */
+  background:#005bbb;
   color:#fff;
   font-size:19px;
   font-weight:900;
@@ -128,7 +129,10 @@ li{margin:8px 0}
 <body>
 <header>
   <div class="hospital">Hospital Universitario Virgen de las Nieves</div>
-  <div class="service">Servicio de Obstetricia y Ginecología</div>
+  <div class="service">
+    Servicio de Obstetricia y Ginecología<br>
+    y Servicio de Anatomía Patológica
+  </div>
   <div class="appname">Asistente de actuación – Muerte fetal</div>
 </header>
 
@@ -136,11 +140,10 @@ li{margin:8px 0}
   <div class="card">
     <label for="weeks">Edad gestacional (semanas)</label>
 
-    <!-- ✅ Mantengo number para estabilidad en móvil + solo enteros -->
     <input id="weeks"
       type="number"
       inputmode="numeric"
-      min="0"
+      min="1"
       step="1"
       placeholder="Ej.: 20"
     >
@@ -185,7 +188,7 @@ li{margin:8px 0}
 </main>
 
 <script>
-/* ====== SCENARIOS (22) — igual que tu versión actual ====== */
+/* ====== SCENARIOS (22) ====== */
 var SCENARIOS = [
   { id:"S01", group:"LT14", naceVivo:null, retirada:false, necropsia:true,
     observaciones:"La norma general es que los padres no retiren los restos dada la edad gestacional",
@@ -311,57 +314,38 @@ var SCENARIOS = [
   }
 ];
 
+/* Utilidades */
 function $(id){ return document.getElementById(id); }
-
 function escapeHtml(s){
   return String(s)
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
-
-function normalizeItem(s){
-  return String(s || "").replace(/\s+/g," ").replace(/^\s+|\s+$/g,"");
-}
-
+function normalizeItem(s){ return String(s||"").replace(/\s+/g," ").replace(/^\s+|\s+$/g,""); }
 function dedupe(items){
-  if(!items || !items.length) return [];
-  var seen = {}, out = [];
+  if(!items||!items.length) return [];
+  var seen={}, out=[];
   for(var i=0;i<items.length;i++){
-    var t = normalizeItem(items[i]);
-    if(!t) continue;
-    if(seen[t]) continue;
-    seen[t] = true;
-    out.push(t);
+    var t=normalizeItem(items[i]); if(!t) continue;
+    if(seen[t]) continue; seen[t]=true; out.push(t);
   }
   return out;
 }
-
 function renderList(title, items){
-  var clean = dedupe(items);
-  var html = '<div class="card"><h2>' + escapeHtml(title) + '</h2>';
-  if(!clean.length){
-    html += '<div class="muted">—</div></div>';
-    return html;
-  }
-  html += '<ul>';
-  for(var i=0;i<clean.length;i++){
-    html += '<li>' + escapeHtml(clean[i]) + '</li>';
-  }
-  html += '</ul></div>';
-  return html;
+  var clean=dedupe(items);
+  var html='<div class="card"><h2>'+escapeHtml(title)+'</h2>';
+  if(!clean.length){ html+='<div class="muted">—</div></div>'; return html; }
+  html+='<ul>';
+  for(var i=0;i<clean.length;i++) html+='<li>'+escapeHtml(clean[i])+'</li>';
+  html+='</ul></div>'; return html;
 }
-
 function computeGroup(weeks){
-  if(typeof weeks !== "number" || !isFinite(weeks) || weeks < 0) return null;
-  if(weeks < 14) return "LT14";
-  if(weeks <= 21) return "14_21";
-  if(weeks <= 25) return "22_25";
+  if(typeof weeks!=="number"||!isFinite(weeks)||weeks<1) return null;
+  if(weeks<14) return "LT14";
+  if(weeks<=21) return "14_21";
+  if(weeks<=25) return "22_25";
   return "GE26";
 }
-
 function groupLabel(g){
   if(g==="LT14") return "< 14 semanas";
   if(g==="14_21") return "14–21 semanas";
@@ -370,296 +354,281 @@ function groupLabel(g){
   return "";
 }
 
-var state = { weeks:null, group:null, naceVivo:null, retirada:null, necropsia:null };
+/* ====== Scroll helpers ====== */
+function smoothScrollTo(el){
+  if(!el) return;
+  setTimeout(function(){
+    try { el.scrollIntoView({behavior:"smooth", block:"start"}); }
+    catch(e){ el.scrollIntoView(); }
+  }, 80);
+}
+function scrollToNextFromWeeks(){
+  if($("nv_block").style.display !== "none") return smoothScrollTo($("nv_block"));
+  if($("ret_block").style.display !== "none") return smoothScrollTo($("ret_block"));
+  if($("ap_block").style.display !== "none") return smoothScrollTo($("ap_block"));
+}
+function scrollToAfterNV(){
+  if($("ret_block").style.display !== "none") return smoothScrollTo($("ret_block"));
+  if($("ap_block").style.display !== "none") return smoothScrollTo($("ap_block"));
+  return smoothScrollTo($("go"));
+}
+function scrollToAfterRet(){
+  if($("ap_block").style.display !== "none") return smoothScrollTo($("ap_block"));
+  return smoothScrollTo($("go"));
+}
+function scrollToAfterAP(){
+  return smoothScrollTo($("go"));
+}
+
+/* ====== Estado ====== */
+var state={ weeks:null, group:null, naceVivo:null, retirada:null, necropsia:null };
 
 function filterScenarios(partial){
-  var arr = [];
+  var arr=[];
   for(var i=0;i<SCENARIOS.length;i++){
-    var sc = SCENARIOS[i];
-    if(partial.group && sc.group !== partial.group) continue;
-
-    if(partial.naceVivo !== null && partial.naceVivo !== undefined){
-      if(sc.naceVivo !== null && sc.naceVivo !== partial.naceVivo) continue;
+    var sc=SCENARIOS[i];
+    if(partial.group && sc.group!==partial.group) continue;
+    if(partial.naceVivo!==null && partial.naceVivo!==undefined){
+      if(sc.naceVivo!==null && sc.naceVivo!==partial.naceVivo) continue;
     }
-    if(partial.retirada !== null && partial.retirada !== undefined){
-      if(sc.retirada !== null && sc.retirada !== partial.retirada) continue;
+    if(partial.retirada!==null && partial.retirada!==undefined){
+      if(sc.retirada!==null && sc.retirada!==partial.retirada) continue;
     }
-    if(partial.necropsia !== null && partial.necropsia !== undefined){
-      if(sc.necropsia !== null && sc.necropsia !== partial.necropsia) continue;
+    if(partial.necropsia!==null && partial.necropsia!==undefined){
+      if(sc.necropsia!==null && sc.necropsia!==partial.necropsia) continue;
     }
     arr.push(sc);
   }
   return arr;
 }
-
 function allNull(arr, field){
   if(!arr.length) return true;
-  for(var i=0;i<arr.length;i++){
-    if(arr[i][field] !== null) return false;
-  }
+  for(var i=0;i<arr.length;i++) if(arr[i][field]!==null) return false;
   return true;
 }
-
 function anyValue(arr, field, value){
-  for(var i=0;i<arr.length;i++){
-    if(arr[i][field] === value) return true;
-  }
+  for(var i=0;i<arr.length;i++) if(arr[i][field]===value) return true;
   return false;
 }
-
 function setActive(btnId, groupIds){
   for(var i=0;i<groupIds.length;i++) $(groupIds[i]).classList.remove("active");
   $(btnId).classList.add("active");
 }
-
 function setEnabled(btnId, enabled){
-  $(btnId).disabled = !enabled;
+  $(btnId).disabled=!enabled;
   if(!enabled) $(btnId).classList.remove("active");
 }
-
 function resetActives(){
-  $("nv_si").classList.remove("active");
-  $("nv_no").classList.remove("active");
-  $("ret_si").classList.remove("active");
-  $("ret_no").classList.remove("active");
-  $("ap_si").classList.remove("active");
-  $("ap_no").classList.remove("active");
+  $("nv_si").classList.remove("active"); $("nv_no").classList.remove("active");
+  $("ret_si").classList.remove("active"); $("ret_no").classList.remove("active");
+  $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
 }
-
 function updateRetSiLabel(){
-  $("ret_si").textContent = (state.group === "LT14") ? "Sí (excepcional)" : "Sí";
+  $("ret_si").textContent = (state.group==="LT14") ? "Sí (excepcional)" : "Sí";
 }
 
 function updateUI(){
-  $("ap_note").style.display = "none";
-  $("ap_no").style.display = "";
-
-  $("ret_note").style.display = "none";
-  $("ret_note").textContent = "";
+  $("ap_note").style.display="none";
+  $("ap_no").style.display="";
+  $("ret_note").style.display="none";
+  $("ret_note").textContent="";
 
   if(!state.group){
-    $("nv_block").style.display = "none";
-    $("ret_block").style.display = "none";
-    $("ap_block").style.display = "none";
-    $("go").disabled = true;
+    $("nv_block").style.display="none";
+    $("ret_block").style.display="none";
+    $("ap_block").style.display="none";
+    $("go").disabled=true;
     return;
   }
 
   updateRetSiLabel();
 
-  var nvAll = filterScenarios({ group: state.group });
-  var nvApplies = !allNull(nvAll, "naceVivo");
+  var nvAll=filterScenarios({ group: state.group });
+  var nvApplies=!allNull(nvAll,"naceVivo");
   $("nv_block").style.display = nvApplies ? "" : "none";
 
   if(!nvApplies){
-    state.naceVivo = null;
+    state.naceVivo=null;
     $("nv_si").classList.remove("active");
     $("nv_no").classList.remove("active");
   }
 
-  var canShowRet = (!nvApplies) || (nvApplies && state.naceVivo !== null);
+  var canShowRet = (!nvApplies) || (nvApplies && state.naceVivo!==null);
   $("ret_block").style.display = canShowRet ? "" : "none";
 
   if(!canShowRet){
-    $("ap_block").style.display = "none";
-    $("go").disabled = true;
+    $("ap_block").style.display="none";
+    $("go").disabled=true;
     return;
   }
 
-  var mustRetYes = (state.group === "22_25" && state.naceVivo === true);
+  var mustRetYes=(state.group==="22_25" && state.naceVivo===true);
 
-  var retBasis = filterScenarios({ group: state.group, naceVivo: state.naceVivo });
-  var retYesOk = anyValue(retBasis, "retirada", true);
-  var retNoOk  = anyValue(retBasis, "retirada", false);
+  var retBasis=filterScenarios({ group: state.group, naceVivo: state.naceVivo });
+  var retYesOk=anyValue(retBasis,"retirada",true);
+  var retNoOk=anyValue(retBasis,"retirada",false);
 
   if(mustRetYes){
-    retYesOk = true;
-    retNoOk = false;
-    state.retirada = true;
-    setActive("ret_si", ["ret_no","ret_si"]);
-    $("ret_note").style.display = "";
-    $("ret_note").textContent = "En 22–25 semanas, si nace vivo, la retirada de los restos es obligatoria.";
+    retYesOk=true; retNoOk=false;
+    state.retirada=true;
+    setActive("ret_si",["ret_no","ret_si"]);
+    $("ret_note").style.display="";
+    $("ret_note").textContent="En 22–25 semanas, si nace vivo, la retirada de los restos es obligatoria.";
   }
 
-  setEnabled("ret_si", retYesOk);
-  setEnabled("ret_no", retNoOk);
+  setEnabled("ret_si",retYesOk);
+  setEnabled("ret_no",retNoOk);
 
-  if(!retYesOk && state.retirada === true) state.retirada = null;
-  if(!retNoOk && state.retirada === false) state.retirada = null;
+  if(!retYesOk && state.retirada===true) state.retirada=null;
+  if(!retNoOk && state.retirada===false) state.retirada=null;
 
-  if(state.retirada === null){
-    $("ap_block").style.display = "none";
-    $("go").disabled = true;
+  if(state.retirada===null){
+    $("ap_block").style.display="none";
+    $("go").disabled=true;
     return;
   }
 
-  var apBasis = filterScenarios({ group: state.group, naceVivo: state.naceVivo, retirada: state.retirada });
-  var apApplies = !allNull(apBasis, "necropsia");
+  var apBasis=filterScenarios({ group: state.group, naceVivo: state.naceVivo, retirada: state.retirada });
+  var apApplies=!allNull(apBasis,"necropsia");
   $("ap_block").style.display = apApplies ? "" : "none";
 
   if(!apApplies){
-    state.necropsia = null;
+    state.necropsia=null;
     $("ap_si").classList.remove("active");
     $("ap_no").classList.remove("active");
-    setEnabled("ap_si", false);
-    setEnabled("ap_no", false);
+    setEnabled("ap_si",false); setEnabled("ap_no",false);
   } else {
-    var apYesOk = anyValue(apBasis, "necropsia", true);
-    var apNoOk  = anyValue(apBasis, "necropsia", false);
-    setEnabled("ap_si", apYesOk);
-    setEnabled("ap_no", apNoOk);
-
-    if(!apYesOk && state.necropsia === true) state.necropsia = null;
-    if(!apNoOk && state.necropsia === false) state.necropsia = null;
+    var apYesOk=anyValue(apBasis,"necropsia",true);
+    var apNoOk=anyValue(apBasis,"necropsia",false);
+    setEnabled("ap_si",apYesOk); setEnabled("ap_no",apNoOk);
+    if(!apYesOk && state.necropsia===true) state.necropsia=null;
+    if(!apNoOk && state.necropsia===false) state.necropsia=null;
   }
 
-  if(apApplies && state.group !== "LT14" && state.naceVivo === true && state.retirada === false){
-    $("ap_note").style.display = "";
-    $("ap_no").style.display = "none";
-    state.necropsia = true;
-    setActive("ap_si", ["ap_no","ap_si"]);
-    setEnabled("ap_si", true);
+  if(apApplies && state.group!=="LT14" && state.naceVivo===true && state.retirada===false){
+    $("ap_note").style.display="";
+    $("ap_no").style.display="none";
+    state.necropsia=true;
+    setActive("ap_si",["ap_no","ap_si"]);
+    setEnabled("ap_si",true);
   }
 
-  var candidates = filterScenarios({
-    group: state.group,
-    naceVivo: state.naceVivo,
-    retirada: state.retirada,
-    necropsia: state.necropsia
+  var candidates=filterScenarios({
+    group: state.group, naceVivo: state.naceVivo, retirada: state.retirada, necropsia: state.necropsia
   });
 
-  if(apApplies && state.necropsia === null){
-    $("go").disabled = true;
-    return;
-  }
-  $("go").disabled = (candidates.length !== 1);
+  if(apApplies && state.necropsia===null){ $("go").disabled=true; return; }
+  $("go").disabled = (candidates.length!==1);
 }
 
 function renderOutput(){
-  var candidates = filterScenarios({
-    group: state.group,
-    naceVivo: state.naceVivo,
-    retirada: state.retirada,
-    necropsia: state.necropsia
+  var candidates=filterScenarios({
+    group: state.group, naceVivo: state.naceVivo, retirada: state.retirada, necropsia: state.necropsia
   });
-
-  if(candidates.length !== 1){
-    $("out").innerHTML =
-      '<div class="card"><h2>Error</h2><div class="muted">La combinación no coincide de forma única con la tabla.</div></div>';
+  if(candidates.length!==1){
+    $("out").innerHTML='<div class="card"><h2>Error</h2><div class="muted">La combinación no coincide de forma única con la tabla.</div></div>';
     return;
   }
+  var sc=candidates[0];
 
-  var sc = candidates[0];
+  var parts=[];
+  parts.push("EG "+state.weeks+" sem");
+  parts.push("Intervalo: "+groupLabel(state.group));
+  if($("nv_block").style.display!=="none") parts.push("Nació vivo: "+(state.naceVivo?"Sí":"No"));
+  parts.push("Retiran restos: "+(state.retirada?"Sí":"No"));
+  if($("ap_block").style.display!=="none") parts.push("Necropsia: "+(state.necropsia?"Sí":"No"));
 
-  var parts = [];
-  parts.push("EG " + state.weeks + " sem");
-  parts.push("Intervalo: " + groupLabel(state.group));
-  if($("nv_block").style.display !== "none") parts.push("Nació vivo: " + (state.naceVivo ? "Sí" : "No"));
-  parts.push("Retiran restos: " + (state.retirada ? "Sí" : "No"));
-  if($("ap_block").style.display !== "none") parts.push("Necropsia: " + (state.necropsia ? "Sí" : "No"));
+  var head='<div class="card control-info"><div>'+escapeHtml(parts.join(" · "))+'</div><div>Escenario: '+escapeHtml(sc.id)+'</div></div>';
 
-  var head =
-    '<div class="card control-info">' +
-      '<div>' + escapeHtml(parts.join(" · ")) + '</div>' +
-      '<div>Escenario: ' + escapeHtml(sc.id) + '</div>' +
-    '</div>';
-
-  var obsHtml = "";
+  var obsHtml="";
   if(normalizeItem(sc.observaciones)){
-    obsHtml =
-      '<div class="card obs-card">' +
-        '<div class="obs-title"><span class="obs-icon">ℹ️</span><h2>Observaciones</h2></div>' +
-        '<div style="white-space:pre-wrap">' + escapeHtml(sc.observaciones) + '</div>' +
-      '</div>';
+    obsHtml='<div class="card obs-card"><div class="obs-title"><span class="obs-icon">ℹ️</span><h2>Observaciones</h2></div><div style="white-space:pre-wrap">'+escapeHtml(sc.observaciones)+'</div></div>';
   }
 
   $("out").innerHTML =
-    head +
-    obsHtml +
+    head + obsHtml +
     '<div class="grid2">' +
       renderList("Documentos", sc.documentos) +
       renderList("Envío de muestras", sc.envio) +
     '</div>' +
     renderList("Eliminación", sc.eliminacion);
 
-  try { $("out").scrollIntoView({ behavior: "smooth" }); }
-  catch(e) { $("out").scrollIntoView(); }
+  try{ $("out").scrollIntoView({behavior:"smooth"}); } catch(e){ $("out").scrollIntoView(); }
 }
 
-/* ✅ Enteros: si meten 22.5 o pegan 22.5, se redondea y se reescribe */
+/* Semanas: enteros, mínimo 1, cerrar teclado + scroll */
 $("weeks").addEventListener("input", function(){
-  var raw = String(this.value || "").replace(",", ".");
-  var v = parseFloat(raw);
-  if(isFinite(v)) v = Math.round(v);
+  var raw=String(this.value||"").replace(",",".");
+  var v=parseFloat(raw);
+  if(isFinite(v)) v=Math.round(v);
 
-  // reescribir el input para que quede entero
-  if(isFinite(v)) this.value = String(v);
+  if(!isFinite(v) || v < 1){
+    this.value = "";
+    state.weeks=null;
+    state.group=null;
 
-  state.weeks = (isFinite(v) ? v : null);
-  state.group = computeGroup(state.weeks);
+    state.naceVivo=null; state.retirada=null; state.necropsia=null;
+    resetActives();
+    $("out").innerHTML="";
+    updateUI();
+    return;
+  }
 
-  state.naceVivo = null;
-  state.retirada = null;
-  state.necropsia = null;
+  this.value=String(v);
+  state.weeks=v;
+  state.group=computeGroup(state.weeks);
 
+  state.naceVivo=null; state.retirada=null; state.necropsia=null;
   resetActives();
-  $("out").innerHTML = "";
+  $("out").innerHTML="";
   updateUI();
+
+  this.blur();              // cerrar teclado
+  scrollToNextFromWeeks();  // bajar a la siguiente pregunta
 });
 
+/* Botones + auto-scroll */
 $("nv_no").addEventListener("click", function(){
   if(this.disabled) return;
-  state.naceVivo = false;
-  setActive("nv_no", ["nv_no","nv_si"]);
+  state.naceVivo=false; setActive("nv_no",["nv_no","nv_si"]);
   state.retirada=null; state.necropsia=null;
-  $("ret_si").classList.remove("active"); $("ret_no").classList.remove("active");
-  $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
-  $("out").innerHTML = "";
-  updateUI();
+  $("out").innerHTML=""; updateUI();
+  scrollToAfterNV();
 });
 $("nv_si").addEventListener("click", function(){
   if(this.disabled) return;
-  state.naceVivo = true;
-  setActive("nv_si", ["nv_no","nv_si"]);
+  state.naceVivo=true; setActive("nv_si",["nv_no","nv_si"]);
   state.retirada=null; state.necropsia=null;
-  $("ret_si").classList.remove("active"); $("ret_no").classList.remove("active");
-  $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
-  $("out").innerHTML = "";
-  updateUI();
+  $("out").innerHTML=""; updateUI();
+  scrollToAfterNV();
 });
 
 $("ret_no").addEventListener("click", function(){
   if(this.disabled) return;
-  state.retirada = false;
-  setActive("ret_no", ["ret_no","ret_si"]);
-  state.necropsia = null;
-  $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
-  $("out").innerHTML = "";
-  updateUI();
+  state.retirada=false; setActive("ret_no",["ret_no","ret_si"]);
+  state.necropsia=null;
+  $("out").innerHTML=""; updateUI();
+  scrollToAfterRet();
 });
 $("ret_si").addEventListener("click", function(){
   if(this.disabled) return;
-  state.retirada = true;
-  setActive("ret_si", ["ret_no","ret_si"]);
-  state.necropsia = null;
-  $("ap_si").classList.remove("active"); $("ap_no").classList.remove("active");
-  $("out").innerHTML = "";
-  updateUI();
+  state.retirada=true; setActive("ret_si",["ret_no","ret_si"]);
+  state.necropsia=null;
+  $("out").innerHTML=""; updateUI();
+  scrollToAfterRet();
 });
 
 $("ap_no").addEventListener("click", function(){
   if(this.disabled) return;
-  state.necropsia = false;
-  setActive("ap_no", ["ap_no","ap_si"]);
-  $("out").innerHTML = "";
-  updateUI();
+  state.necropsia=false; setActive("ap_no",["ap_no","ap_si"]);
+  $("out").innerHTML=""; updateUI();
+  scrollToAfterAP();
 });
 $("ap_si").addEventListener("click", function(){
   if(this.disabled) return;
-  state.necropsia = true;
-  setActive("ap_si", ["ap_no","ap_si"]);
-  $("out").innerHTML = "";
-  updateUI();
+  state.necropsia=true; setActive("ap_si",["ap_no","ap_si"]);
+  $("out").innerHTML=""; updateUI();
+  scrollToAfterAP();
 });
 
 $("go").addEventListener("click", function(){ renderOutput(); });
