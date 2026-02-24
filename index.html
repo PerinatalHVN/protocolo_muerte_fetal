@@ -183,10 +183,7 @@ li{margin:8px 0}
       <label>¿Desean necropsia (estudio de Anatomía Patológica)?</label>
 
       <div id="ap_note" class="warning" style="display:none">
-        <span class="wicon">⚠️</span>
-        En esta edad gestacional, si nace vivo y los padres no desean retirar los restos,
-        la única opción es solicitar el estudio de Anatomía Patológica para que la incineración
-        corra a cargo del Hospital.
+        <span class="wicon">⚠️</span><span id="ap_note_text"></span>
       </div>
 
       <div class="seg" role="group" aria-label="Desean necropsia">
@@ -202,7 +199,7 @@ li{margin:8px 0}
 </main>
 
 <script>
-/* ====== SCENARIOS (ahora 23) ====== */
+/* ====== SCENARIOS (22) ====== */
 var SCENARIOS = [
   { id:"S01", group:"LT14", naceVivo:null, retirada:false, necropsia:true,
     observaciones:"La norma general es que los padres no retiren los restos dada la edad gestacional",
@@ -222,7 +219,8 @@ var SCENARIOS = [
       "Autorización/rechazo de necropsia y/o tratamiento de restos fetales",
       "Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)"
     ],
-    envio:["Bote vacío en fresco"],
+    /* ✅ CORRECCIÓN: envío de muestras */
+    envio:["Bote vacío en fresco","Entrega a la funeraria"],
     eliminacion:["Funeraria a cargo de los padres"]
   },
 
@@ -300,8 +298,6 @@ var SCENARIOS = [
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
     eliminacion:["Funeraria a cargo de los padres"]
   },
-
-  /* ✅ NUEVO: ≥26 · No nace vivo · Sí retiran · Sí necropsia */
   { id:"S23", group:"GE26", naceVivo:false, retirada:true, necropsia:true, observaciones:"",
     documentos:[
       "Petición Anatomía Patológica (doble)",
@@ -316,7 +312,6 @@ var SCENARIOS = [
     ],
     eliminacion:["Funeraria: Retirar los restos en Anatomía Patológica antes de 30 días"]
   },
-
   { id:"S18", group:"GE26", naceVivo:false, retirada:false, necropsia:true, observaciones:"",
     documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
@@ -337,12 +332,11 @@ var SCENARIOS = [
     documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
     eliminacion:["Incineración a cargo del Hospital"]
-  },
-  { id:"S22", group:"GE26", naceVivo:false, retirada:false, necropsia:false, observaciones:"",
-    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
-    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
-    eliminacion:["Funeraria a cargo de los padres"]
   }
+
+  /* ✅ Eliminado el escenario inválido:
+     ≥26 · No nace vivo · No retiran · No necropsia
+  */
 ];
 
 /* Helpers */
@@ -466,7 +460,9 @@ function resetAfterAP(){
 
 /* UI */
 function updateUI(){
+  // reset visual warnings
   $("ap_note").style.display="none";
+  $("ap_note_text").textContent="";
   $("ap_no").style.display="";
   $("ret_note").style.display="none";
   $("ret_note").textContent="";
@@ -540,12 +536,28 @@ function updateUI(){
     if(!apNoOk && state.necropsia===false) state.necropsia=null;
   }
 
+  // Regla 1 (ya existente): si nace vivo y no retiran -> obligar AP Sí + aviso (incineración hospital)
   if(apApplies && state.group!=="LT14" && state.naceVivo===true && state.retirada===false){
     $("ap_note").style.display="";
+    $("ap_note_text").textContent=
+      "En esta edad gestacional, si nace vivo y los padres no desean retirar los restos, la única opción es solicitar el estudio de Anatomía Patológica para que la incineración corra a cargo del Hospital.";
     $("ap_no").style.display="none";
     state.necropsia=true;
     setActive("ap_si",["ap_no","ap_si"]);
     setEnabled("ap_si",true);
+  }
+
+  // ✅ Regla 2 (NUEVA): ≥26 si NO desean necropsia, los padres deben llevarse los restos
+  // Operativo: si ya eligieron "No retirar" en ≥26, entonces necropsia "No" es imposible: se oculta y se muestra aviso.
+  // (Así obligas a "Sí" para poder no retirar).
+  if(apApplies && state.group==="GE26" && state.retirada===false){
+    $("ap_note").style.display="";
+    $("ap_note_text").textContent=
+      "Si no desean necropsia, en esta semana de embarazo, los padres deben llevarse los restos.";
+    $("ap_no").style.display="none";
+    // no forzamos automáticamente state.necropsia si todavía no está marcada;
+    // pero al ocultar "No", la única opción visible será "Sí".
+    if(state.necropsia===false) state.necropsia=null;
   }
 
   var candidates=filterScenarios({
