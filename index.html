@@ -77,7 +77,7 @@ label{font-weight:800;font-size:14px;display:block}
   box-shadow:0 4px 10px rgba(0,0,0,.15);
 }
 .seg button:active{transform:scale(0.97)}
-.seg button:disabled{opacity:.45}
+.seg button:disabled{opacity:.45; cursor:not-allowed}
 
 .btn{
   width:100%;
@@ -199,7 +199,7 @@ li{margin:8px 0}
 </main>
 
 <script>
-/* ====== SCENARIOS (22) ====== */
+/* ====== SCENARIOS ====== */
 var SCENARIOS = [
   { id:"S01", group:"LT14", naceVivo:null, retirada:false, necropsia:true,
     observaciones:"La norma general es que los padres no retiren los restos dada la edad gestacional",
@@ -219,7 +219,6 @@ var SCENARIOS = [
       "Autorización/rechazo de necropsia y/o tratamiento de restos fetales",
       "Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)"
     ],
-    /* ✅ CORRECCIÓN: envío de muestras */
     envio:["Bote vacío en fresco","Entrega a la funeraria"],
     eliminacion:["Funeraria a cargo de los padres"]
   },
@@ -333,10 +332,6 @@ var SCENARIOS = [
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
     eliminacion:["Incineración a cargo del Hospital"]
   }
-
-  /* ✅ Eliminado el escenario inválido:
-     ≥26 · No nace vivo · No retiran · No necropsia
-  */
 ];
 
 /* Helpers */
@@ -460,12 +455,15 @@ function resetAfterAP(){
 
 /* UI */
 function updateUI(){
-  // reset visual warnings
   $("ap_note").style.display="none";
   $("ap_note_text").textContent="";
-  $("ap_no").style.display="";
   $("ret_note").style.display="none";
   $("ret_note").textContent="";
+
+  // importante: por defecto, mostrar y habilitar AP No (luego aplicamos reglas)
+  $("ap_no").style.display="";
+  setEnabled("ap_no", true);
+  setEnabled("ap_si", true);
 
   if(!state.group){
     $("nv_block").style.display="none";
@@ -531,32 +529,28 @@ function updateUI(){
   } else {
     var apYesOk=anyValue(apBasis,"necropsia",true);
     var apNoOk=anyValue(apBasis,"necropsia",false);
-    setEnabled("ap_si",apYesOk); setEnabled("ap_no",apNoOk);
+    setEnabled("ap_si",apYesOk);
+    setEnabled("ap_no",apNoOk);
     if(!apYesOk && state.necropsia===true) state.necropsia=null;
     if(!apNoOk && state.necropsia===false) state.necropsia=null;
   }
 
-  // Regla 1 (ya existente): si nace vivo y no retiran -> obligar AP Sí + aviso (incineración hospital)
+  // Regla: si nace vivo y no retiran -> obligar AP Sí + aviso (incineración hospital)
   if(apApplies && state.group!=="LT14" && state.naceVivo===true && state.retirada===false){
     $("ap_note").style.display="";
     $("ap_note_text").textContent=
       "En esta edad gestacional, si nace vivo y los padres no desean retirar los restos, la única opción es solicitar el estudio de Anatomía Patológica para que la incineración corra a cargo del Hospital.";
-    $("ap_no").style.display="none";
-    state.necropsia=true;
-    setActive("ap_si",["ap_no","ap_si"]);
-    setEnabled("ap_si",true);
+    setEnabled("ap_no", false);      // visible pero no seleccionable
+    if(state.necropsia===false) state.necropsia=null;
   }
 
-  // ✅ Regla 2 (NUEVA): ≥26 si NO desean necropsia, los padres deben llevarse los restos
-  // Operativo: si ya eligieron "No retirar" en ≥26, entonces necropsia "No" es imposible: se oculta y se muestra aviso.
-  // (Así obligas a "Sí" para poder no retirar).
+  // ✅ Regla NUEVA: ≥26 si NO desean necropsia, los padres deben llevarse los restos
+  // Operativo: en ≥26 con "No retirar", el botón "No" debe verse pero estar deshabilitado + aviso
   if(apApplies && state.group==="GE26" && state.retirada===false){
     $("ap_note").style.display="";
     $("ap_note_text").textContent=
       "Si no desean necropsia, en esta semana de embarazo, los padres deben llevarse los restos.";
-    $("ap_no").style.display="none";
-    // no forzamos automáticamente state.necropsia si todavía no está marcada;
-    // pero al ocultar "No", la única opción visible será "Sí".
+    setEnabled("ap_no", false);      // visible pero no seleccionable
     if(state.necropsia===false) state.necropsia=null;
   }
 
