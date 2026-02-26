@@ -455,15 +455,14 @@ function resetAfterAP(){
 
 /* UI */
 function updateUI(){
+  // reset visual de avisos
   $("ap_note").style.display="none";
   $("ap_note_text").textContent="";
   $("ret_note").style.display="none";
   $("ret_note").textContent="";
 
-  // importante: por defecto, mostrar y habilitar AP No (luego aplicamos reglas)
+  // por defecto, AP No visible (luego puede quedar deshabilitado por reglas)
   $("ap_no").style.display="";
-  setEnabled("ap_no", true);
-  setEnabled("ap_si", true);
 
   if(!state.group){
     $("nv_block").style.display="none";
@@ -475,6 +474,7 @@ function updateUI(){
 
   updateRetSiLabel();
 
+  // ¿Aplica nace vivo?
   var nvAll=filterScenarios({ group: state.group });
   var nvApplies=!allNull(nvAll,"naceVivo");
   $("nv_block").style.display = nvApplies ? "" : "none";
@@ -484,6 +484,7 @@ function updateUI(){
     clearActive(["nv_no","nv_si"]);
   }
 
+  // mostrar retirar si procede
   var canShowRet = (!nvApplies) || (nvApplies && state.naceVivo!==null);
   $("ret_block").style.display = canShowRet ? "" : "none";
   if(!canShowRet){
@@ -492,6 +493,7 @@ function updateUI(){
     return;
   }
 
+  // regla 22–25: si nace vivo, retirada obligatoria
   var mustRetYes=(state.group==="22_25" && state.naceVivo===true);
 
   var retBasis=filterScenarios({ group: state.group, naceVivo: state.naceVivo });
@@ -518,6 +520,7 @@ function updateUI(){
     return;
   }
 
+  // AP
   var apBasis=filterScenarios({ group: state.group, naceVivo: state.naceVivo, retirada: state.retirada });
   var apApplies=!allNull(apBasis,"necropsia");
   $("ap_block").style.display = apApplies ? "" : "none";
@@ -531,29 +534,47 @@ function updateUI(){
     var apNoOk=anyValue(apBasis,"necropsia",false);
     setEnabled("ap_si",apYesOk);
     setEnabled("ap_no",apNoOk);
+
     if(!apYesOk && state.necropsia===true) state.necropsia=null;
     if(!apNoOk && state.necropsia===false) state.necropsia=null;
   }
 
-  // Regla: si nace vivo y no retiran -> obligar AP Sí + aviso (incineración hospital)
+  /* ====== REGLAS / AVISOS (forzados, siempre visibles cuando tocan) ====== */
+
+  // 1) Si nace vivo y NO retiran -> AP Sí obligatorio para incineración Hospital
+  var forcedMsg = "";
   if(apApplies && state.group!=="LT14" && state.naceVivo===true && state.retirada===false){
-    $("ap_note").style.display="";
-    $("ap_note_text").textContent=
+    forcedMsg =
       "En esta edad gestacional, si nace vivo y los padres no desean retirar los restos, la única opción es solicitar el estudio de Anatomía Patológica para que la incineración corra a cargo del Hospital.";
-    setEnabled("ap_no", false);      // visible pero no seleccionable
-    if(state.necropsia===false) state.necropsia=null;
+    setEnabled("ap_no", false); // visible pero no clicable
+    if(state.necropsia===false){
+      state.necropsia=null;
+      $("ap_no").classList.remove("active");
+    }
   }
 
-  // ✅ Regla NUEVA: ≥26 si NO desean necropsia, los padres deben llevarse los restos
-  // Operativo: en ≥26 con "No retirar", el botón "No" debe verse pero estar deshabilitado + aviso
-  if(apApplies && state.group==="GE26" && state.retirada===false){
-    $("ap_note").style.display="";
-    $("ap_note_text").textContent=
+  // 2) ≥26: si NO desean necropsia, los padres deben llevarse los restos
+  // => cuando Retiran = No, AP=No debe verse pero NO poder seleccionarse + aviso amarillo.
+  if(state.group==="GE26" && state.retirada===false){
+    var msg2 =
       "Si no desean necropsia, en esta semana de embarazo, los padres deben llevarse los restos.";
-    setEnabled("ap_no", false);      // visible pero no seleccionable
-    if(state.necropsia===false) state.necropsia=null;
+    forcedMsg = forcedMsg ? (forcedMsg + " " + msg2) : msg2;
+
+    // asegura que AP esté visible y el aviso se muestre SIEMPRE
+    $("ap_block").style.display = "";
+    setEnabled("ap_no", false); // visible pero no clicable
+    if(state.necropsia===false){
+      state.necropsia=null;
+      $("ap_no").classList.remove("active");
+    }
   }
 
+  if(forcedMsg){
+    $("ap_note").style.display="";
+    $("ap_note_text").textContent = forcedMsg;
+  }
+
+  // habilitar botón "Mostrar" solo si combinación única
   var candidates=filterScenarios({
     group: state.group, naceVivo: state.naceVivo, retirada: state.retirada, necropsia: state.necropsia
   });
