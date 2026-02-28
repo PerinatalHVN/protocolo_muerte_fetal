@@ -225,24 +225,24 @@ var SCENARIOS = [
     eliminacion:["Según protocolo interno de Anatomía Patológica"]
   },
   { id:"S10", group:"14_21", naceVivo:false, retirada:false, necropsia:false, observaciones:"",
-    documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    documentos:["Petición Anatomía Patológica (placenta).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
     eliminacion:["Según protocolo interno de Anatomía Patológica"]
   },
   { id:"S06", group:"14_21", naceVivo:true, retirada:true, necropsia:true, observaciones:"",
     documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rellenando apartado de certificado de muerte cierta)","Certificado de nacimiento","Certificado de defunción","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
-    eliminacion:["Funeraria: Retirar los restos en Anatomía Patológica antes de 30 días"]
+    eliminacion:["Funeraria a cargo de los padres: Retirar los restos en Anatomía Patológica antes de 30 días"]
   },
   { id:"S07", group:"14_21", naceVivo:true, retirada:true, necropsia:false, observaciones:"",
-    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rellenando apartado de certificado de muerte cierta)","Certificado de nacimiento","Certificado de defunción","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    documentos:["Petición Anatomía Patológica (placenta). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rellenando apartado de certificado de muerte cierta)","Certificado de nacimiento","Certificado de defunción","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
-    eliminacion:["Funeraria: Retirar los restos de la cámara mortuoria"]
+    eliminacion:["Feto a la cámara mortuoria: Funeraria a cargo de los padres","Placenta a Anatomía Patológica"]
   },
   { id:"S08", group:"14_21", naceVivo:false, retirada:true, necropsia:false, observaciones:"",
-    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
-    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
-    eliminacion:["Funeraria: Retirar los restos de la cámara mortuoria"]
+    documentos:["Petición Anatomía Patológica (placenta). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío","- Placenta en formol"],
+    eliminacion:["Feto a la cámara mortuoria: Funeraria a cargo de los padres","Placenta a Anatomía Patológica"]
   },
   { id:"S09", group:"14_21", naceVivo:false, retirada:true, necropsia:true, observaciones:"",
     documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
@@ -257,7 +257,7 @@ var SCENARIOS = [
     eliminacion:["Según protocolo interno de Anatomía Patológica"]
   },
   { id:"S12", group:"22_25", naceVivo:false, retirada:false, necropsia:false, observaciones:"",
-    documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    documentos:["Petición Anatomía Patológica (placenta).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
     eliminacion:["Según protocolo interno de Anatomía Patológica"]
   },
@@ -265,13 +265,13 @@ var SCENARIOS = [
     observaciones:"Si nace vivo, la retirada de los restos por parte de los padres es obligatoria",
     documentos:["Petición Anatomía Patológica (doble)","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
-    eliminacion:["Funeraria: Retirar los restos en Anatomía Patológica antes de 30 días"]
+    eliminacion:["Funeraria a cargo de los padres: Retirar los restos de Anatomía Patológica antes de 30 días"]
   },
   { id:"S14", group:"22_25", naceVivo:true, retirada:true, necropsia:false,
     observaciones:"Si nace vivo, la retirada de los restos por parte de los padres es obligatoria",
-    documentos:["Petición Anatomía Patológica (doble)","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
-    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
-    eliminacion:["Funeraria: Retirar los restos de la cámara mortuoria"]
+    documentos:["Petición Anatomía Patológica (placenta)","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío","- Placenta en formol"],
+    eliminacion:["Feto a la cámara mortuoria: Funeraria a cargo de los padres","Placenta a Anatomía Patológica"]
   },
   { id:"S15", group:"22_25", naceVivo:false, retirada:true, necropsia:true, observaciones:"",
     documentos:["Petición Anatomía Patológica (doble)","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
@@ -279,16 +279,16 @@ var SCENARIOS = [
     eliminacion:["Funeraria: Retirar los restos en Anatomía Patológica antes de 30 días"]
   },
   { id:"S16", group:"22_25", naceVivo:false, retirada:true, necropsia:false, observaciones:"",
-    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
-    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
-    eliminacion:["Funeraria: Retirar los restos de la cámara mortuoria"]
+    documentos:["Petición Anatomía Patológica (placenta). Especificando que no desean necropsia","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío","- Placenta en formol"],
+    eliminacion:["Feto a la cámara mortuoria: Funeraria a cargo de los padres","Placenta a Anatomía Patológica"]
   },
 
   // ≥26
   { id:"S17", group:"GE26", naceVivo:false, retirada:true, necropsia:false, observaciones:"",
-    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
-    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
-    eliminacion:["Funeraria a cargo de los padres"]
+    documentos:["Petición Anatomía Patológica (placenta). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío","- Placenta en formol"],
+    eliminacion:["Feto a la cámara mortuoria: Funeraria a cargo de los padres","Placenta a Anatomía Patológica"]
   },
   { id:"S23", group:"GE26", naceVivo:false, retirada:true, necropsia:true, observaciones:"",
     documentos:["Petición Anatomía Patológica (doble)","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Boletín estadístico"],
@@ -302,14 +302,14 @@ var SCENARIOS = [
   },
   { id:"S19", group:"GE26", naceVivo:true, retirada:true, necropsia:false,
     observaciones:"Si nace vivo y no desean necropsia, la retirada de los restos por parte de los padres es obligatoria",
-    documentos:["Petición Anatomía Patológica (doble). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
-    envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
-    eliminacion:["Funeraria a cargo de los padres"]
+    documentos:["Petición Anatomía Patológica (placenta). Especificando que no desean necropsia","Autorización/rechazo de necropsia y/o tratamiento de restos fetales (rechazando necropsia)","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
+    envio:["Feto y placenta por separado:","- Feto: seco y frío","- Placenta en formol"],
+    eliminacion:["Feto a la cámara mortuoria: Funeraria a cargo de los padres","Placenta a Anatomía Patológica"]
   },
   { id:"S20", group:"GE26", naceVivo:true, retirada:true, necropsia:true, observaciones:"",
     documentos:["Petición Anatomía Patológica (doble).","Autorización/rechazo de necropsia y/o tratamiento de restos fetales","Declaración y parte de alumbramiento de criaturas abortivas (hoja rosa)","Certificado de nacimiento","Certificado de defunción","Boletín estadístico"],
     envio:["Feto y placenta por separado:","- Feto: seco y frío si se envía < 72 h, si no en formol.","- Placenta en formol"],
-    eliminacion:["Funeraria a cargo de los padres"]
+    eliminacion:["Funeraria a cargo de los padres: Retirar los restos en Anatomía Patológica antes de 30 días"]
   }
 ];
 
